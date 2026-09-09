@@ -1,0 +1,66 @@
+#!/bin/bash
+
+#____________________________________Extracting________________________________________________
+# Extracted the Downloaded CSV file from its file path and saving it in a folder called Raw.
+Raw="CDE_Linux_Assignment/Raw/"
+csv_path="annual-enterprise-survey-2023-financial-year-provisional.csv"
+transformed_folder="Transform"
+transformed_data="$transformed_folder/2023_year_finance.csv"
+
+# 1. Create the 'Raw' folder if it doesn't already exist
+echo "Creating Raw directory"
+mkdir $Raw
+echo "$Raw folder created successfully"
+
+# 2. Copy the local CSV file into the 'Raw' folder
+echo "copying CSV from source path"
+cp $csv_path -t $Raw 
+echo "Extraction completed in path $Raw"
+
+if [-f $csv_path -t $Raw ]
+then
+  echo "Success"
+else
+  echo "Failure, file does not exist"
+fi
+
+#____________________________________Transforming________________________________________________
+#Transformed the columns by selecting year, Value, Units,variable_code and saving into file named 2023_year_finance.csv.
+
+echo "Transforming data"
+mkdir -p "transformed folder" && touch "transformed_data"
+echo "year,Value,Units,variable_code" > "$transformed_data"
+
+gawk '
+BEGIN {
+    # FPAT defines fields: either quoted text OR non-comma text
+    FPAT = "([^,]+)|(\"[^\"]+\")"
+    OFS = ","
+}
+NR == 1 {
+    for (i = 1; i <= NF; i++) {
+        # Clean quotes or line returns from header names if present
+        gsub(/^"|"$/, "", $i)
+        if ($i == "Year")          col1 = i
+        if ($i == "Value")         col2 = i
+        if ($i == "Units")         col3 = i
+        if ($i == "Variable_code") col4 = i
+    }
+}
+NR > 1 {
+    print $col1, $col2, $col3, $col4
+}' "$csv_path" >> "$transformed_data"
+
+echo "Transformation successfully completed"
+
+#____________________________________Load________________________________________________
+#Load the transformed data into a directory named Gold.
+
+mkdir -p Gold
+cp "$TRANSFORMED_DATA" -t Gold
+
+if [-f "$TRANSFORMED_DATA" -t Gold]; then
+    echo "File copied successfully."
+else
+    echo "File copy failed."
+fi
